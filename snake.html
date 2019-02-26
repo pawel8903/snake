@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    
+    </head>
+    <body>
+        <h1><p id="score">Score: </p></h1>
+        <section>
+            <canvas id="myCanvas" style="border: solid 2px black;">
+            </canvas>
+        </section>
+        <style>
+            body{
+                text-align: center;
+                background-color: lightgray;
+            }
+            section{
+                background-color: white;
+                width: 600px;
+                margin: 0 auto;
+            }
+        
+        </style>
+        
+    </body>
+    
+    <script>
+        let can = document.getElementById("myCanvas");
+        let ctx = can.getContext("2d");
+        
+        let canvansWidth = can.width = 600;
+        let canvasHeight = can.height = 600;
+        
+        let sizeOfBox = canvansWidth/12;
+        
+        const SNAKE_COLOR = 'lightgreen';
+        const SNAKE_BORDER = 'darkgreen';
+        const CANVAS_COLOR = 'white';
+        const CANVAS_BORDER_COLOR = 'black';
+        const SPEED = 200;
+        
+        let myVar;
+        let playerPushButton = false;
+        let score = 0;
+        
+        let dx = -sizeOfBox;
+        let dy = 0;
+        let foodX ;
+        let foodY;
+        
+        let snake = [
+            {x:300, y:300},
+            {x:350, y:300},
+            {x:400, y:300}
+        ]
+         
+        writeSquare();
+        drawFood();
+        main();
+        
+        document.addEventListener("keydown", changeDirection);
+        document.getElementById("score").innerHTML = "Score: " + score;
+        
+        function main(){
+            myVar = setTimeout(function onTick(){
+                playerPushButton = false;
+                moveSnake();
+                main();
+            },SPEED)
+            gameOver();
+        }
+        
+        
+        function moveSnake(){
+            moveSnakeHead();
+            drawSnake();
+        }
+        
+        function writeSquare(){
+            
+            for(let i = sizeOfBox;i <600; i+=sizeOfBox){
+                ctx.moveTo(i,0);
+                ctx.lineTo(i,600);
+                ctx.stroke();
+                
+                ctx.moveTo(0,i);
+                ctx.lineTo(600,i);
+                ctx.stroke();
+            }
+        }
+        
+        function drawSnakePart(snakePart){
+            ctx.fillStyle = SNAKE_COLOR;
+            ctx.strokeStyle = SNAKE_BORDER;
+            
+            ctx.fillRect(snakePart.x, snakePart.y,sizeOfBox,sizeOfBox);
+            ctx.strokeRect(snakePart.x,snakePart.y,sizeOfBox,sizeOfBox);
+        }
+        
+        function drawSnake(){
+            snake.forEach(drawSnakePart);
+        }
+        
+        function moveSnakeHead(){
+            const head = {x: snake[0].x + dx, y:snake[0].y +dy};
+            snake.unshift(head);
+            clearCanvas();
+            didSnakeEatFood = snake[0].x === foodX && snake[0].y === foodY;
+            if(didSnakeEatFood){
+                score++;
+                drawFood();
+                document.getElementById("score").innerHTML = "Score: " + score;
+            }else{
+                snake.pop();
+            }
+            
+        }
+        function clearCanvas(){
+            let snakeLastElement = snake.length-1;
+            ctx.fillStyle = CANVAS_COLOR;
+            ctx.strokeStyle = CANVAS_BORDER_COLOR;
+            ctx.fillRect(snake[snakeLastElement].x,snake[snakeLastElement].y,sizeOfBox,sizeOfBox);
+            ctx.strokeRect(snake[snakeLastElement].x,snake[snakeLastElement].y,sizeOfBox,sizeOfBox);
+            
+        }
+        
+        function changeDirection(event){
+            const LEFT_KEY = 37;
+            const RIGHT_KEY = 39;
+            const UP_KEY = 38;
+            const DOWN_KEY = 40;
+            
+            if(playerPushButton) return;
+            
+            playerPushButton = true;
+            
+            const KEY_PRESSED = event.keyCode;
+            const GOING_UP = dy === -sizeOfBox;
+            const GOING_DOWN = dy === sizeOfBox;
+            const GOING_LEFT = dx === -sizeOfBox;
+            const GOING_RIGHT = dx === sizeOfBox;
+            
+            
+            
+            if(KEY_PRESSED === LEFT_KEY && !GOING_RIGHT){
+                dx =- sizeOfBox;
+                dy = 0;
+            }
+            if(KEY_PRESSED === RIGHT_KEY && !GOING_LEFT){
+                dx = sizeOfBox;
+                dy = 0;
+            }
+            if(KEY_PRESSED === UP_KEY && !GOING_DOWN){
+                dx = 0;
+                dy = -sizeOfBox;
+            }
+            if(KEY_PRESSED === DOWN_KEY && !GOING_UP){
+                dx = 0;
+                dy = sizeOfBox;
+            }
+        }
+        function randomNumber(min, max){
+            return Math.round((Math.random()*(max-min)+min)/sizeOfBox)*sizeOfBox;
+        }
+        
+        function createFood(){
+            foodX = randomNumber(0,canvansWidth - sizeOfBox);
+            foodY = randomNumber(0, canvasHeight - sizeOfBox);
+            
+            snake.forEach(function(part){
+                const foosIsNotOnSnake = part.x == foodX && part.y == foodY;
+                if(foosIsNotOnSnake) createFood();
+            })
+        }
+        
+        function drawFood(){
+            createFood();
+            ctx.fillStyle = 'red';
+            ctx.strokeStyle = 'darkred';
+            ctx.fillRect(foodX,foodY,sizeOfBox,sizeOfBox);
+            ctx.strokeRect(foodX,foodY,sizeOfBox,sizeOfBox);
+        }
+        
+        function gameOver(){
+            let ifHeadHitBoard =snake[0].x === -sizeOfBox || snake[0].x === can.width || snake[0].y === -sizeOfBox || snake[0].y === can.height;
+            
+            for(i = 4; i< snake.length; i++){
+                if(snake[0].x === snake[i].x && snake[0].y === snake[i].y){
+                    gameOverBoard();
+                }
+            }
+            
+            if(ifHeadHitBoard){
+                gameOverBoard();
+            }
+        }
+        function gameOverBoard(){
+            clearTimeout(myVar);
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'white';
+            
+                ctx.fillRect(0,0,canvansWidth,canvasHeight);
+                ctx.strokeRect(0,0,canvansWidth,canvasHeight);
+                
+                ctx.font = '48px serif';
+                ctx.fillStyle = 'blue';
+                ctx.textAlign = "center";
+                ctx.fillText('Game over', 300,300);
+        }
+        
+    </script>
+</html>
